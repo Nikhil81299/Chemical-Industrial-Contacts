@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chemical Industrial Contact</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding-bottom: 70px;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+        }
+
+        .page {
+            display: none;
+            padding: 20px;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-input {
+            width: 0;
+            opacity: 0;
+            padding: 6px 10px;
+            border-radius: 20px;
+            border: none;
+            transition: .35s;
+        }
+
+        .search-wrapper.active .search-input {
+            width: 180px;
+            opacity: 1;
+            background: #fff;
+        }
+
+        .search-btn {
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 75px;
+            right: 20px;
+            display: none;
+            background: #0d6efd;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 0;
+        }
+
+        .nav-item {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            display: block;
+        }
+
+        .nav-item.active {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+
+        .desktop-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .desktop-table-wrapper table {
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .desktop-table-wrapper th,
+        .desktop-table-wrapper td {
+            font-size: 14px;
+            padding: 8px;
+            word-break: break-word;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-dark bg-primary px-3 d-flex justify-content-between">
+        <span class="navbar-brand fw-bold">Chemical Industrial Contacts</span>
+        <div class="search-wrapper" id="searchBox">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search..." onkeyup="searchText()">
+            <i class="bi bi-search search-btn" onclick="toggleSearch()"></i>
+        </div>
+    </nav>
+
+    <button id="globalBackBtn" class="back-btn" onclick="goBack()"><i class="bi bi-arrow-left"></i> Back</button>
+
+    <!-- JOB PAGE -->
+    <div id="job" class="page active">
+        <div class="page-header">
+            <h5>Chemical Company Contacts</h5>
+        </div>
+        <div class="card p-1">
+            <div class="desktop-table-wrapper">
+                <table class="table table-bordered table-striped text-center align-middle w-100">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Contact Person</th>
+                            <th>Contact Details</th>
+                            <th>Email Id</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONSULTANCY PAGE -->
+    <div id="consultancy" class="page">
+        <div class="page-header">
+            <h5>Consultancy Contacts</h5>
+        </div>
+        <div class="card p-1">
+            <div class="desktop-table-wrapper">
+                <table class="table table-bordered table-striped text-center align-middle w-100">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Contact Person</th>
+                            <th>Contact Details</th>
+                            <th>Email Id</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="consultancyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH RESULTS -->
+    <div id="searchResults" class="page">
+        <div class="page-header">
+            <h5>Search Results</h5>
+        </div>
+        <div class="card p-1">
+            <div class="desktop-table-wrapper">
+                <table class="table table-bordered table-striped text-center align-middle w-100">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Contact Person</th>
+                            <th>Contact Details</th>
+                            <th>Email Id</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+                    <tbody id="searchResultBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="openTab('job', this)">
+            <i class="bi bi-briefcase"></i>
+            Job <span class="badge bg-primary ms-1" id="jobCount">0</span>
+        </div>
+
+        <div class="nav-item" onclick="openTab('consultancy', this)">
+            <i class="bi bi-people"></i>
+            Consultancy <span class="badge bg-primary ms-1" id="consultancyCount">0</span>
+        </div>
+    </div>
+
+    <script>
+        let contacts = [];
+        let historyStack = [];
+
+        async function loadSheetData() {
+            try {
+                const SHEET_ID = "1XiIi5QaL3fN_r76DXk-8CUsilwbTMqpK2SkIua3T5uk";
+                const SHEET_NAME = "Sheet1";
+
+                const res = await fetch(`https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`);
+                const data = await res.json();
+
+                contacts = data.map((row, index) => ({
+                    id: index + 1,
+                    company: row["Company Name"] || "",
+                    person: row["Contact Person"] || "",
+                    phone: row["Contact Details"] || "",
+                    email: row["Email Id"] || "",
+                    location: row["Location"] || "",
+                    type: row["Type"] || "Job"
+                }));
+
+                // 🔥 AUTO SORT A–Z
+                contacts.sort((a, b) => a.company.localeCompare(b.company));
+
+                loadContactsUI();
+                updateCounts();
+
+            } catch (err) {
+                console.error("Sheet Load Error:", err);
+                alert("Failed to load contacts from Google Sheet");
+            }
+        }
+
+        function loadContactsUI() {
+            const jobBody = document.getElementById("jobTableBody");
+            const consultancyBody = document.getElementById("consultancyTableBody");
+
+            jobBody.innerHTML = "";
+            consultancyBody.innerHTML = "";
+
+            contacts.forEach(contact => {
+
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+            <td>${contact.company}</td>
+            <td>${contact.person}</td>
+            <td>${contact.phone ? `<a href="tel:${contact.phone}" class="text-decoration-none">${contact.phone}</a>` : ""}</td>
+            <td>${contact.email ? `<a href="mailto:${contact.email}" class="text-decoration-none">${contact.email}</a>` : ""}</td>
+            <td>${contact.location}</td>
+        `;
+
+                if (contact.type === "Consultancy") {
+                    consultancyBody.appendChild(tr);
+                } else {
+                    jobBody.appendChild(tr);
+                }
+            });
+        }
+
+        function updateCounts() {
+            const jobTotal = contacts.filter(c => c.type !== "Consultancy").length;
+            const consultancyTotal = contacts.filter(c => c.type === "Consultancy").length;
+
+            document.getElementById("jobCount").innerText = jobTotal;
+            document.getElementById("consultancyCount").innerText = consultancyTotal;
+        }
+
+        function openTab(id, el = null) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            document.getElementById("globalBackBtn").style.display = id === "job" ? "none" : "block";
+        }
+
+        function goBack() {
+            openTab("job");
+        }
+
+        function toggleSearch() {
+            document.getElementById("searchBox").classList.toggle("active");
+        }
+
+        function searchText() {
+            const query = document.getElementById("searchInput").value.toLowerCase().trim();
+            const resultBody = document.getElementById("searchResultBody");
+            resultBody.innerHTML = "";
+
+            if (!query) return;
+
+            const filtered = contacts.filter(c =>
+                c.company.toLowerCase().includes(query) ||
+                c.person.toLowerCase().includes(query) ||
+                c.phone.toLowerCase().includes(query) ||
+                c.email.toLowerCase().includes(query) ||
+                c.location.toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                resultBody.innerHTML = `<tr><td colspan="5" class="text-muted">No results found</td></tr>`;
+            } else {
+                filtered.forEach(contact => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                <td>${contact.company}</td>
+                <td>${contact.person}</td>
+                <td>${contact.phone ? `<a href="tel:${contact.phone}" class="text-decoration-none">${contact.phone}</a>` : ""}</td>
+                <td>${contact.email ? `<a href="mailto:${contact.email}" class="text-decoration-none">${contact.email}</a>` : ""}</td>
+                <td>${contact.location}</td>
+            `;
+                    resultBody.appendChild(tr);
+                });
+            }
+
+            openTab("searchResults");
+        }
+
+        loadSheetData();
+    </script>
+
+</body>
+
+</html>
